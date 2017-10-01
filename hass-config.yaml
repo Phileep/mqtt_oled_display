@@ -1,0 +1,91 @@
+# Home Assistant config for automations to send data to MQTT Oled.
+# You will require relevant sensors for automations to work.. this is an example
+
+automation:
+  - alias: 'update temperature to oled'
+    trigger:
+      platform: state
+      entity_id: sensor.temperature_outside, sensor.temperature_rf1
+    action:
+      service: mqtt.publish
+      data_template:
+        topic: "ha/oled1/message"
+        retain: false
+        payload: '{"1":"O:{{states.sensor.temperature_outside.state}}    B:{{states.sensor.temperature_rf1.state}}" }' 
+  - alias: 'update CPU data to oled'
+    trigger:
+      platform: state
+      entity_id: sensor.cpu_use 
+      #, sensor.ram_free, sensor.rain
+    condition:
+      condition: numeric_state
+      entity_id: sensor.cpu_use
+      above: 15
+    action:
+      - service: automation.turn_off
+        entity_id: automation.update_cpu_data_to_oled
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":"CPU High:{{states.sensor.cpu_use.state}}" }' 
+      - delay:
+          minutes: 5
+      ## now clear the meassage and re-enable the automation
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":" " }'
+      - service: automation.turn_on
+        entity_id: automation.update_cpu_data_to_oled
+          
+  - alias: 'update orchid data to oled'
+    trigger:
+      platform: state
+      entity_id: plant.orchid_plant
+      to: 'problem'
+    action:
+      - service: automation.turn_off
+        entity_id: automation.update_orchid_data_to_oled
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":"Orchid dry: {{states.sensor.humidity_rf_plant1.state}}" }'
+      - delay:
+          minutes: 5
+      ## now clear the meassage and re-enable the automation
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":" " }'
+      - service: automation.turn_on
+        entity_id: automation.update_orchid_data_to_oled
+        
+        
+  - alias: 'update fruit salad data to oled'
+    trigger:
+      platform: state
+      entity_id: plant.fruit_salad_plant
+      to: 'problem'
+    action:
+      - service: automation.turn_off
+        entity_id: automation.update_fruit_salad_data_to_oled
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":"Fruit Salad dry: {{states.sensor.humidity_rf_plant2.state}}" }' 
+      - delay:
+          minutes: 5
+      ## now clear the meassage and re-enable the automation
+      - service: mqtt.publish
+        data_template:
+          topic: "ha/oled1/message"
+          retain: false
+          payload: '{"9":" " }'
+      - service: automation.turn_on
+        entity_id: automation.update_fruit_salad_data_to_oled
+ 
